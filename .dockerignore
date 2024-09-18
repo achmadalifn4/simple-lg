@@ -1,0 +1,7 @@
+.dockerignore
+.gitignore
+.gitlab-ci.yml
+.Dockerfile
+node_modules
+package-lock.json
+sonar-project.properties

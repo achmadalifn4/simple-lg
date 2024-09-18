@@ -1,0 +1,66 @@
+stages:
+  - install_packages
+  - code_testing
+  - code_review
+  - app_build
+  - app_deploy
+
+cache:
+  paths:
+    - node_modules/
+
+before_script:
+  - docker login -u $DOCKER_USER -p $DOCKER_PASS
+
+install_required_packages:
+  stage: install_packages
+  tags:
+  - simple-lg
+  only:
+  - main
+  script:
+    - echo "Installing the required packages"
+    - npm install
+
+code_testing:
+  stage: code_testing
+  tags:
+  - simple-lg
+  only:
+  - main
+  script:
+    - echo "Running tests"
+    - npm test
+    - npm run test:coverage
+
+code_review:
+  stage: code_review
+  tags:
+  - simple-lg
+  only:
+  - main
+  script:
+    - echo "Running SonarQube Code Review"
+    - sonar-scanner -Dsonar.projectKey=simple-lg -Dsonar.sources=. -Dsonar.host.url=http://10.60.13.92:9000 -Dsonar.token=$SONAR_TOKEN
+
+app_build:
+  stage: app_build
+  tags:
+  - simple-lg
+  only:
+  - main
+  script:
+    - echo "Building Docker image"
+    - docker build -t $DOCKER_IMAGE .
+
+app_deploy:
+  stage: app_deploy
+  tags:
+  - simple-lg
+  only:
+  - main
+  script:
+    - echo "Deploying app and pushing docker image to docker hub"
+    - docker rm -f lg-app
+    - docker run -d --name lg-app -p 3000:3000 $DOCKER_IMAGE:latest
+    - docker push $DOCKER_IMAGE:latest
